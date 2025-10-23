@@ -1,0 +1,26 @@
+@import "tailwindcss";
+
+@theme {
+  --color-pale-purple: #f2e7ff;
+  --color-medium-slate-blue: #8d58fe;
+  --color-ultramarine: #2f1298;
+  --color-rich-black: #02001a;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: "Nunito Sans", sans-serif;
+  font-optical-sizing: auto;
+  font-variation-settings: "wdth" 100, "YTLC" 500;
+}
+
+#app {
+  width: 100vw;
+  min-height: 100vh;
+  overflow-y: auto;
+}

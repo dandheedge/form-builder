@@ -1,0 +1,38 @@
+{
+  "name": "uppass-form-builder",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "bun run lint:check && vue-tsc -b && vite build",
+    "preview": "vite preview",
+    "lint": "oxlint --vue-plugin --import-plugin .",
+    "lint:fix": "oxlint --vue-plugin --import-plugin --fix .",
+    "lint:check": "oxlint --vue-plugin --import-plugin --quiet .",
+    "type-check": "vue-tsc --noEmit"
+  },
+  "dependencies": {
+    "@kitbag/router": "^0.20.6",
+    "@tailwindcss/vite": "^4.1.15",
+    "@vue-hero-icons/outline": "^1.7.2",
+    "@vueuse/core": "^14.0.0",
+    "motion-v": "^1.7.3",
+    "pinia": "^3.0.3",
+    "tailwindcss": "^4.1.15",
+    "vue": "^3.5.22",
+    "zod": "^4.1.12"
+  },
+  "devDependencies": {
+    "@types/node": "^24.6.0",
+    "@vitejs/plugin-vue": "^6.0.1",
+    "@vue/tsconfig": "^0.8.1",
+    "oxlint": "^1.23.0",
+    "typescript": "~5.9.3",
+    "vite": "npm:rolldown-vite@7.1.14",
+    "vue-tsc": "^3.1.0"
+  },
+  "overrides": {
+    "vite": "npm:rolldown-vite@7.1.14"
+  }
+}

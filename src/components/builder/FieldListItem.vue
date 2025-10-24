@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { motion } from 'motion-v'
 import type { FormField } from '@/types/form-schema'
+import { EmailIcon, CircleIcon } from '@/components/icons'
 
 defineProps<{
   field: FormField
@@ -16,12 +17,13 @@ defineEmits<{
 const getFieldIcon = (type: FormField['type']) => {
   switch (type) {
     case 'Text':
-    case 'Email':
       return '📝'
+    case 'Email':
+      return 'email'
     case 'Number':
       return '🔢'
     case 'Radio':
-      return '⚪'
+      return 'radio'
     case 'Checkbox':
       return '☑️'
     case 'Select':
@@ -59,11 +61,14 @@ const getFieldIcon = (type: FormField['type']) => {
   >
     <div class="flex items-center gap-3 flex-1 min-w-0">
       <motion.span 
-        class="text-xl flex-shrink-0"
+        class="flex-shrink-0"
+        :class="{ 'text-xl': field.type !== 'Email' && field.type !== 'Radio' }"
         :animate="{ rotate: isDragging ? [0, -10, 10, -10, 0] : 0 }"
         :transition="{ duration: 0.5 }"
       >
-        {{ getFieldIcon(field.type) }}
+        <EmailIcon v-if="field.type === 'Email'" :size="20" class="text-gray-700" />
+        <CircleIcon v-else-if="field.type === 'Radio'" :size="20" class="text-gray-700" />
+        <template v-else>{{ getFieldIcon(field.type) }}</template>
       </motion.span>
       <div class="flex-1 min-w-0">
         <p class="text-sm font-medium text-gray-900 truncate">

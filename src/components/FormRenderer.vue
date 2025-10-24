@@ -39,16 +39,22 @@ const componentMap: Record<FieldType, any> = {
 }
 
 const visibleFields = computed(() => {
-  return visibleFieldNames.value.map((fieldName: string) => {
-    const field = props.schema.items[fieldName]!
-    return {
-      name: fieldName,
-      component: componentMap[field.type],
-      field,
-      value: props.formValues[fieldName],
-      error: errors.value[fieldName]
-    }
-  })
+  return visibleFieldNames.value
+    .map((fieldName: string) => {
+      const field = props.schema.items[fieldName]
+      if (!field) {
+        console.warn(`Field "${fieldName}" not found in schema items`)
+        return null
+      }
+      return {
+        name: fieldName,
+        component: componentMap[field.type],
+        field,
+        value: props.formValues[fieldName],
+        error: errors.value[fieldName]
+      }
+    })
+    .filter((item): item is NonNullable<typeof item> => item !== null)
 })
 
 const updateValue = (fieldName: string, value: unknown) => {

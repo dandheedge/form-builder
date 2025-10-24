@@ -35,7 +35,7 @@ const fieldTypes: { type: FieldType; label: string; icon: string }[] = [
   { type: 'Number', label: 'Number', icon: '🔢' },
   { type: 'Radio', label: 'Radio Buttons', icon: '⚪' },
   { type: 'Checkbox', label: 'Checkboxes', icon: '☑️' },
-  { type: 'Select', label: 'Dropdown', icon: '📋' },
+  { type: 'Select', label: 'Multi Select', icon: '📋' },
 ]
 
 const addNewField = (type: FieldType) => {

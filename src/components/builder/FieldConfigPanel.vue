@@ -82,14 +82,18 @@ const addOption = () => {
 
 const updateOption = (index: number, label: string, value: string) => {
   if (!localField.value.enum) return
-  localField.value.enum[index] = { label, value }
-  emit('update', { enum: localField.value.enum })
+  // Create a new array to ensure reactivity
+  const updatedEnum = [...localField.value.enum]
+  updatedEnum[index] = { label, value }
+  localField.value.enum = updatedEnum
+  emit('update', { enum: updatedEnum })
 }
 
 const removeOption = (index: number) => {
   if (!localField.value.enum) return
-  localField.value.enum.splice(index, 1)
-  emit('update', { enum: localField.value.enum })
+  const updatedEnum = localField.value.enum.filter((_, i) => i !== index)
+  localField.value.enum = updatedEnum
+  emit('update', { enum: updatedEnum })
 }
 </script>
 
@@ -255,18 +259,12 @@ const removeOption = (index: number) => {
             class="flex gap-2"
           >
             <input
+              :id="`option-label-${index}`"
               type="text"
               :value="option.label"
               placeholder="Label"
               class="flex-1 px-3 py-2 border border-ultramarine rounded-lg focus:ring-2 focus:ring-medium-slate-blue focus:border-transparent"
               @input="updateOption(index, ($event.target as HTMLInputElement).value, option.value.toString())"
-            />
-            <input
-              type="text"
-              :value="option.value"
-              placeholder="Value"
-              class="flex-1 px-3 py-2 border border-ultramarine rounded-lg focus:ring-2 focus:ring-medium-slate-blue focus:border-transparent"
-              @input="updateOption(index, option.label, ($event.target as HTMLInputElement).value)"
             />
             <button
               type="button"

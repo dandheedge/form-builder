@@ -74,7 +74,7 @@ components/
 │   ├── NumberField.vue        # Numeric input with constraints
 │   ├── RadioField.vue         # Radio button groups
 │   ├── CheckboxField.vue      # Checkbox groups
-│   └── SelectField.vue        # Dropdown selects
+│   └── SelectField.vue        # Multi Select
 ├── FormBuilder.vue          # Main builder orchestrator
 └── FormRenderer.vue         # Dynamic form renderer
 ```

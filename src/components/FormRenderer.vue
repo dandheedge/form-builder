@@ -5,6 +5,7 @@ import NumberField from './form-fields/NumberField.vue'
 import RadioField from './form-fields/RadioField.vue'
 import CheckboxField from './form-fields/CheckboxField.vue'
 import SelectField from './form-fields/SelectField.vue'
+import DateField from './form-fields/DateField.vue'
 import type { FieldType, RendererSchema, FormSchema, FormValues } from '@/types/form-schema'
 import { useProtectedValidation } from '@/composables/useProtectedValidation'
 
@@ -26,7 +27,11 @@ const {
   visibleFieldNames,
   validateField,
   validateVisibleFields,
-} = useProtectedValidation(props.fullSchema, props.schema, props.formValues)
+} = useProtectedValidation(
+  () => props.fullSchema,
+  () => props.schema,
+  () => props.formValues
+)
 
 const componentMap: Record<FieldType, any> = {
   Text: TextField,
@@ -35,7 +40,7 @@ const componentMap: Record<FieldType, any> = {
   Radio: RadioField,
   Checkbox: CheckboxField,
   Select: SelectField,
-  Date: TextField, // Fallback to TextField for now
+  Date: DateField,
 }
 
 const visibleFields = computed(() => {

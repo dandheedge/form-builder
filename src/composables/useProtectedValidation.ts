@@ -1,108 +1,54 @@
-import { computed } from 'vue'
-import type { FormSchema, FormValues, RendererSchema } from '@/types/form-schema'
+import { computed, reactive, toValue, type MaybeRefOrGetter } from 'vue'
+import type { FormSchema, RendererSchema, FormValues } from '@/types/form-schema'
 import { createProtectedValidationContext } from '@/utils/schema-transformer'
 import { useZodValidation } from './useZodValidation'
 
-/**
- * Protected validation composable that keeps sensitive validation logic hidden
- * 
- * This composable accepts the full schema but doesn't expose it to component props.
- * It evaluates visibility conditions and validation rules without revealing
- * the actual conditional logic to the client.
- * 
- * @param fullSchema - The complete form schema (kept internal)
- * @param rendererSchema - The minimal schema for rendering
- * @param formValues - Current form values (reactive)
- * @returns Computed visibility states and validation functions
- */
 export function useProtectedValidation(
-  fullSchema: FormSchema,
-  rendererSchema: RendererSchema,
-  formValues: FormValues
+  fullSchema: MaybeRefOrGetter<FormSchema>,
+  rendererSchema: MaybeRefOrGetter<RendererSchema>,
+  formValues: MaybeRefOrGetter<FormValues>
 ) {
-  const validationContext = createProtectedValidationContext(fullSchema)
-  const { validateField: zodValidateField, validateForm: zodValidateForm } = useZodValidation(fullSchema)
-
-  /**
-   * Evaluates visibility for a specific field without exposing the rules
-   */
-  const isFieldVisible = (fieldName: string): boolean => {
-    const visibilityRule = validationContext.getVisibilityRule(fieldName)
-    
-    if (!visibilityRule) {
-      return true // No visibility rules means always visible
-    }
-
-    // Evaluate conditions without exposing them
-    for (const [dependentFieldName, condition] of Object.entries(visibilityRule)) {
-      const fieldValue = formValues[dependentFieldName]
-      
-      // Parse condition: e.g., "required|is:full"
-      const parts = (condition as string).split('|')
-      
-      for (const part of parts) {
-        if (part === 'required') {
-          if (fieldValue === undefined || fieldValue === null || fieldValue === '') {
-            return false
-          }
-        } else if (part.startsWith('is:')) {
-          const expectedValue = part.substring(3)
-          if (fieldValue !== expectedValue) {
-            return false
-          }
-        } else if (part.startsWith('not:')) {
-          const unexpectedValue = part.substring(4)
-          if (fieldValue === unexpectedValue) {
-            return false
-          }
-        }
-      }
-    }
-
-    return true
-  }
-
-  /**
-   * Checks if a field is required without exposing the rule
-   */
-  const isFieldRequired = (fieldName: string): boolean => {
-    const rule = validationContext.getValidationRule(fieldName)
-    return rule?.includes('required') ?? false
-  }
-
-  /**
-   * Computed list of field names in order, filtered by visibility
-   */
-  const visibleFieldNames = computed(() => {
-    return Object.keys(rendererSchema.items).filter(fieldName => isFieldVisible(fieldName))
+  const state = reactive({
+    fullSchema: computed(() => toValue(fullSchema)),
+    rendererSchema: computed(() => toValue(rendererSchema)),
+    values: computed(() => toValue(formValues))
   })
 
-  /**
-   * Validates a single field using Zod validation
-   */
-  const validateField = (fieldName: string, value: unknown): string | null => {
-    return zodValidateField(fieldName, value)
+  const ctx = computed(() => createProtectedValidationContext(state.fullSchema))
+  const validator = useZodValidation(state.fullSchema)
+
+  const isFieldVisible = (name: string) => {
+    const rule = ctx.value.getVisibilityRule(name)
+    if (!rule) return true
+
+    return Object.entries(rule).every(([dependent, condition]) => {
+      const val = state.values[dependent]
+      return condition.split('|').every(part => {
+        if (part === 'required') return !!val
+        if (part.startsWith('is:')) return val === part.slice(3)
+        if (part.startsWith('not:')) return val !== part.slice(4)
+        return true
+      })
+    })
   }
 
-  /**
-   * Validates all visible fields
-   */
-  const validateVisibleFields = (values: Record<string, unknown>) => {
-    // Only validate visible fields
-    const visibleValues: Record<string, unknown> = {}
-    for (const fieldName of visibleFieldNames.value) {
-      visibleValues[fieldName] = values[fieldName]
-    }
-
-    return zodValidateForm(visibleValues)
+  const isFieldRequired = (name: string) => {
+    return ctx.value.getValidationRule(name)?.includes('required') ?? false
   }
 
-  return {
-    isFieldVisible,
-    isFieldRequired,
-    visibleFieldNames,
-    validateField,
-    validateVisibleFields,
-  }
+  const visibleFieldNames = computed(() =>
+    Object.keys(state.rendererSchema.items).filter(isFieldVisible)
+  )
+
+  const validateField = (name: string, value: unknown) =>
+    validator.validateField(name, value)
+
+  const validateVisibleFields = (values: Record<string, unknown>) =>
+    validator.validateForm(
+      Object.fromEntries(
+        visibleFieldNames.value.map(n => [n, values[n]])
+      )
+    )
+
+  return { isFieldVisible, isFieldRequired, visibleFieldNames, validateField, validateVisibleFields }
 }
-

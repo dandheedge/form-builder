@@ -8,7 +8,11 @@ import { transformSchemaForRenderer } from '@/utils/schema-transformer'
 import FieldListItem from './builder/FieldListItem.vue'
 import FieldConfigPanel from './builder/FieldConfigPanel.vue'
 import FormRenderer from './FormRenderer.vue'
+import CircleIcon from './icons/CircleIcon.vue'
+import EmailIcon from './icons/EmailIcon.vue'
+import CalendarIcon from './icons/CalendarIcon.vue'
 import type { FieldType } from '@/types/form-schema'
+import type { Component } from 'vue'
 
 const router = useRouter()
 const store = useFormBuilderStore()
@@ -29,13 +33,14 @@ const {
   handleDrop,
 } = useDragAndDrop()
 
-const fieldTypes: { type: FieldType; label: string; icon: string }[] = [
+const fieldTypes: { type: FieldType; label: string; icon: string | Component }[] = [
   { type: 'Text', label: 'Text Input', icon: '📝' },
-  { type: 'Email', label: 'Email', icon: '📧' },
+  { type: 'Email', label: 'Email', icon: EmailIcon },
   { type: 'Number', label: 'Number', icon: '🔢' },
-  { type: 'Radio', label: 'Radio Buttons', icon: '⚪' },
+  { type: 'Radio', label: 'Radio Buttons', icon: CircleIcon },
   { type: 'Checkbox', label: 'Checkboxes', icon: '☑️' },
   { type: 'Select', label: 'Multi Select', icon: '📋' },
+  { type: 'Date', label: 'Date Picker', icon: CalendarIcon },
 ]
 
 const addNewField = (type: FieldType) => {
@@ -143,7 +148,8 @@ const isDragOver = (index: number) => {
               class="flex flex-col items-center gap-1 p-3 bg-pale-purple hover:bg-medium-slate-blue hover:text-white border border-ultramarine rounded-lg transition-all cursor-pointer"
               @click="addNewField(fieldType.type)"
             >
-              <span class="text-2xl">{{ fieldType.icon }}</span>
+              <component v-if="typeof fieldType.icon !== 'string'" :is="fieldType.icon" :size="28" />
+              <span v-else class="text-2xl">{{ fieldType.icon }}</span>
               <span class="text-xs font-medium">{{ fieldType.label }}</span>
             </button>
           </div>

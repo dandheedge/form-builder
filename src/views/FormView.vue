@@ -1,11 +1,30 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useRouter } from '@kitbag/router'
 import FormRenderer from '@/components/FormRenderer.vue'
+import { useFormBuilderStore } from '@/stores/form-builder'
+import { transformSchemaForRenderer } from '@/utils/schema-transformer'
 
 const router = useRouter()
+const store = useFormBuilderStore()
+
+// Transform the full schema to a minimal renderer schema
+// This strips out sensitive metadata like builder config, visibility rules, and validation rules
+const rendererSchema = computed(() => transformSchemaForRenderer(store.schema))
 
 const goToBuilder = () => {
   router.push('builder')
+}
+
+const handleFormValuesUpdate = (newValues: Record<string, unknown>) => {
+  // Update form values in the store
+  Object.entries(newValues).forEach(([fieldName, value]) => {
+    store.updateFormValue(fieldName, value)
+  })
+}
+
+const handleFormSubmit = (values: Record<string, unknown>) => {
+  console.log('Form submitted in FormView:', values)
 }
 </script>
 
@@ -25,7 +44,13 @@ const goToBuilder = () => {
     </header>
 
     <main class="py-8 pb-16">
-      <FormRenderer />
+      <FormRenderer
+        :schema="rendererSchema"
+        :full-schema="store.schema"
+        :form-values="store.formValues"
+        @update:form-values="handleFormValuesUpdate"
+        @submit="handleFormSubmit"
+      />
     </main>
   </div>
 </template>

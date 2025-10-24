@@ -1,19 +1,32 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { useFormBuilderStore } from '@/stores/form-builder'
-import { useFormValidation } from '@/composables/useFormValidation'
-import { useZodValidation } from '@/composables/useZodValidation'
 import TextField from './form-fields/TextField.vue'
 import NumberField from './form-fields/NumberField.vue'
 import RadioField from './form-fields/RadioField.vue'
 import CheckboxField from './form-fields/CheckboxField.vue'
 import SelectField from './form-fields/SelectField.vue'
-import type { FieldType } from '@/types/form-schema'
+import type { FieldType, RendererSchema, FormSchema, FormValues } from '@/types/form-schema'
+import { useProtectedValidation } from '@/composables/useProtectedValidation'
 
-const store = useFormBuilderStore()
+interface FormRendererProps {
+  schema: RendererSchema
+  fullSchema: FormSchema
+  formValues: FormValues
+}
+
+const props = defineProps<FormRendererProps>()
+const emit = defineEmits<{
+  'update:formValues': [value: FormValues]
+  'submit': [values: FormValues]
+}>()
+
 const errors = ref<Record<string, string | null>>({})
 
-const { validateField: zodValidateField, validateForm: zodValidateForm } = useZodValidation(store.schema)
+const {
+  visibleFieldNames,
+  validateField,
+  validateVisibleFields,
+} = useProtectedValidation(props.fullSchema, props.schema, props.formValues)
 
 const componentMap: Record<FieldType, any> = {
   Text: TextField,
@@ -26,46 +39,35 @@ const componentMap: Record<FieldType, any> = {
 }
 
 const visibleFields = computed(() => {
-  return store.fieldOrder
-    .filter((fieldName: string) => {
-      const field = store.schema.items[fieldName]
-      if (!field) return false
-      const { isVisible } = useFormValidation(field, store.formValues)
-      return isVisible.value
-    })
-    .map((fieldName: string) => {
-      const field = store.schema.items[fieldName]!
-      return {
-        name: fieldName,
-        component: componentMap[field.type],
-        field,
-        value: store.formValues[fieldName],
-        error: errors.value[fieldName]
-      }
-    })
+  return visibleFieldNames.value.map((fieldName: string) => {
+    const field = props.schema.items[fieldName]!
+    return {
+      name: fieldName,
+      component: componentMap[field.type],
+      field,
+      value: props.formValues[fieldName],
+      error: errors.value[fieldName]
+    }
+  })
 })
 
 const updateValue = (fieldName: string, value: unknown) => {
-  store.updateFormValue(fieldName, value)
+  const newValues = { ...props.formValues, [fieldName]: value }
+  emit('update:formValues', newValues)
   
-  // Validate the field with Zod
-  const error = zodValidateField(fieldName, value)
+  // Validate the field
+  const error = validateField(fieldName, value)
   errors.value[fieldName] = error
 }
 
 const handleSubmit = () => {
-  // Validate all visible fields with Zod
-  const visibleValues: Record<string, unknown> = {}
-  for (const fieldData of visibleFields.value) {
-    visibleValues[fieldData.name] = store.formValues[fieldData.name]
-  }
-
-  const result = zodValidateForm(visibleValues)
+  const result = validateVisibleFields(props.formValues)
   
   if (result.success) {
-    console.log('Form submitted:', store.formValues)
+    console.log('Form submitted:', props.formValues)
     alert('Form submitted successfully! Check console for values.')
     errors.value = {}
+    emit('submit', props.formValues)
   } else {
     errors.value = result.errors
     alert('Please fix the errors before submitting.')
@@ -77,7 +79,7 @@ const handleSubmit = () => {
   <div class="max-w-2xl mx-auto p-6">
     <div class="bg-white rounded-lg shadow-lg p-8">
       <h1 class="text-3xl font-bold text-gray-900 mb-6">
-        {{ store.schema.label }}
+        {{ schema.label }}
       </h1>
 
       <form @submit.prevent="handleSubmit" class="space-y-6">

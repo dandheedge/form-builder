@@ -53,3 +53,22 @@ export type FormSchema = {
 
 export type FormValues = Record<string, unknown>
 
+// Renderer types - minimal schema for rendering without sensitive metadata
+export type RendererField = {
+  name: string
+  type: FieldType
+  display: DisplayConfig
+  layout: LayoutType
+  enum?: EnumOption[]
+  value_constraints?: ValueConstraints
+  prefill?: PrefillConfig
+  props?: Record<string, unknown>
+  // Note: builder, visible, and rule are intentionally excluded
+}
+
+export type RendererSchema = {
+  name: string
+  label: string
+  items: Record<string, RendererField>
+}
+

@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from '@kitbag/router'
 import { motion, AnimatePresence } from 'motion-v'
 import { useFormBuilderStore } from '@/stores/form-builder'
 import { useDragAndDrop } from '@/composables/useDragAndDrop'
+import { transformSchemaForRenderer } from '@/utils/schema-transformer'
 import FieldListItem from './builder/FieldListItem.vue'
 import FieldConfigPanel from './builder/FieldConfigPanel.vue'
 import FormRenderer from './FormRenderer.vue'
@@ -14,6 +15,10 @@ const store = useFormBuilderStore()
 const showPreview = ref(true)
 const showExportModal = ref(false)
 const exportedJson = ref('')
+
+// Transform schema for the preview renderer
+// In builder mode, we still keep full schema access, but renderer gets minimal schema
+const rendererSchema = computed(() => transformSchemaForRenderer(store.schema))
 
 const {
   draggedIndex,
@@ -56,6 +61,17 @@ const handleImport = () => {
 
 const isDraggingField = (index: number) => {
   return draggedIndex.value === index
+}
+
+const handleFormValuesUpdate = (newValues: Record<string, unknown>) => {
+  // Update form values in the store during preview
+  Object.entries(newValues).forEach(([fieldName, value]) => {
+    store.updateFormValue(fieldName, value)
+  })
+}
+
+const handleFormSubmit = (values: Record<string, unknown>) => {
+  console.log('Form preview submitted:', values)
 }
 
 const isDragOver = (index: number) => {
@@ -211,7 +227,13 @@ const isDragOver = (index: number) => {
                 Reset Form
               </motion.button>
             </div>
-            <FormRenderer />
+            <FormRenderer
+              :schema="rendererSchema"
+              :full-schema="store.schema"
+              :form-values="store.formValues"
+              @update:form-values="handleFormValuesUpdate"
+              @submit="handleFormSubmit"
+            />
           </motion.div>
         </motion.div>
       </AnimatePresence>
